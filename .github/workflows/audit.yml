@@ -1,0 +1,47 @@
+name: Morning Data Audit
+
+on:
+  schedule:
+    # Wakes up at 22:15, 23:15, and 00:15 UTC 
+    # This is 06:15, 07:15, and 08:15 Singapore Time
+    - cron: '15 22,23,0 * * *'
+  workflow_dispatch:
+
+jobs:
+  data-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4 
+
+      - name: Audit Logic
+        run: |
+          # Variable skip rate: 25% chance to skip
+          if [ $((RANDOM % 100)) -lt 25 ]; then
+            echo "Skipping morning audit today."
+            exit 0
+          fi
+
+          git config --global user.name "THIRD_ACCOUNT_USERNAME"
+          git config --global user.email "THIRD_ACCOUNT_EMAIL"
+
+          # Audit-focused messages for a different profile "vibe"
+          MESSAGES=(
+            "audit: verify daily data integrity"
+            "chore: update local audit log"
+            "fix: correct entry formatting in csv"
+            "audit: sync latest validation hashes"
+            "chore: archive yesterday's results"
+          )
+          
+          # Pick a random message
+          MSG=${MESSAGES[$RANDOM % ${#MESSAGES[@]}]}
+
+          # Appending to a CSV file to change the file footprint
+          # Format: Date, Random ID, Status
+          echo "$(date +%Y-%m-%d), $RANDOM, VALIDATED" >> audit_log.csv
+
+          git add audit_log.csv
+          git commit -m "$MSG"
+          git push
